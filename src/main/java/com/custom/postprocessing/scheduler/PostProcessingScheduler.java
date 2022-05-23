@@ -109,14 +109,14 @@ public class PostProcessingScheduler {
 
 	List<String> pclFileList = new LinkedList<>();
 
-	@Scheduled(cron = PostProcessingConstant.CRONJOB_ARCHIVEINTERVAL)
+	@Scheduled(cron = "${cron.job.interval}")
 	public void postProcessing() {
 		logger.info("continues deployment:start postProcessing batch DevOps pipeline deployment testing");
 		String message = smartComPostProcessing();
 		logger.info(message);
 	}
 
-	@Scheduled(cron = PostProcessingConstant.CRONJOB_INTERVAL)
+	@Scheduled(cron = "${cron.job.archive.interval}")
 	public void archivedPostProcessingScheduler() {
 		archivePostProcessing();
 	}

@@ -7,9 +7,6 @@ package com.custom.postprocessing.constant;
 
 public class PostProcessingConstant {
 
-    // public static final String cronTimeTransitInterVal = "0 0 10 * * ?";
-    public static final String CRONJOB_ARCHIVEINTERVAL = "0 */4 * ? * *";
-    public static final String CRONJOB_INTERVAL = "0 * * ? * *";
     public static final String TRANSIT_DIRECTORY = "transit";
     public static final String PRINT_DIRECTORY = "print/";
     public static final String ARCHIVE_DIRECTORY = "archive/";
