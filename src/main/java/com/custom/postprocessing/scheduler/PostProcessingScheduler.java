@@ -111,7 +111,7 @@ public class PostProcessingScheduler {
 
 	@Scheduled(cron = "${cron.job.interval}")
 	public void postProcessing() {
-		logger.info("start postProcessing batch DevOps pipeline deployment testing");
+		logger.info("start postProcessing batch DevOps pipeline deployment testing2");
 		String message = smartComPostProcessing();
 		logger.info(message);
 	}
