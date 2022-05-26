@@ -32,5 +32,6 @@ public class PostProcessingConstant {
     public static final String LICENSE_FILE_NAME = "Aspose.PDF.Java.lic";
     public static final String ROOT_DIRECTORY = "postprocessing";
     public static final String POSTPROCESSING_DIRECTORY = "postprocessing/";
+    public static final String OUTPUT_DIRECTORY = "output/";
     public static final String LOG_FILE = "postprocessing_";
 }
