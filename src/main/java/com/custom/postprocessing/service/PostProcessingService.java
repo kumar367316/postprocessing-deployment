@@ -93,10 +93,10 @@ public class PostProcessingService {
 		String currentDate = currentDateTime();
 		try {
 			CloudBlobContainer container = containerInfo();
-			CloudBlobDirectory transitDirectory = getDirectoryName(container, POSTPROCESSING_DIRECTORY + TRANSIT_DIRECTORY,
-					currentDate + "-" + PRINT_DIRECTORY);
+			CloudBlobDirectory transitDirectory = getDirectoryName(container,
+					POSTPROCESSING_DIRECTORY + TRANSIT_DIRECTORY, currentDate + "-" + PRINT_DIRECTORY);
 			String transitTargetDirectory = POSTPROCESSING_DIRECTORY + TRANSIT_DIRECTORY + "/" + currentDate + "-";
-			if (moveFileToTargetDirectory(PRINT_DIRECTORY, transitTargetDirectory)) {
+			if (moveFileToTargetDirectory(OUTPUT_DIRECTORY + PRINT_DIRECTORY, transitTargetDirectory)) {
 				messageInfo = processMetaDataInputFile(transitDirectory, currentDate);
 				String logFile = LOG_FILE + currentDate + ".log";
 				logger.info("logFile file:" + logFile);
@@ -118,7 +118,7 @@ public class PostProcessingService {
 			String currentDate = currentDateTime();
 			String targetDirectory = POSTPROCESSING_DIRECTORY + TRANSIT_DIRECTORY + "/" + currentDate + "-"
 					+ ARCHIVE_DIRECTORY;
-			message = zipFileTransferToArchive(currentDate, ARCHIVE_DIRECTORY, targetDirectory);
+			message = zipFileTransferToArchive(currentDate, OUTPUT_DIRECTORY + ARCHIVE_DIRECTORY, targetDirectory);
 		} catch (Exception exception) {
 			message = "error in post processing archive";
 			logger.info("error in archive file:" + exception.getMessage());
@@ -132,14 +132,14 @@ public class PostProcessingService {
 		BlobContainerClient blobContainerClient = getBlobContainerClient(connectionNameKey, containerName);
 		Iterable<BlobItem> listBlobs = blobContainerClient.listBlobsByHierarchy(sourceDirectory);
 		for (BlobItem blobItem : listBlobs) {
-			BlobClient dstBlobClient = blobContainerClient.getBlobClient(targetDirectory + blobItem.getName());
+			String fileName = getFileName(blobItem.getName());
+			BlobClient dstBlobClient = blobContainerClient.getBlobClient(targetDirectory + fileName);
 			BlobClient srcBlobClient = blobContainerClient.getBlobClient(blobItem.getName());
 			String updateSrcUrl = srcBlobClient.getBlobUrl();
 			if (srcBlobClient.getBlobUrl().contains(BACKSLASH_ASCII)) {
 				updateSrcUrl = srcBlobClient.getBlobUrl().replace(BACKSLASH_ASCII, FILE_SEPARATION);
 			}
 			dstBlobClient.copyFromUrl(updateSrcUrl);
-			dstBlobClient.beginCopy(updateSrcUrl, null);
 			srcBlobClient.delete();
 			moveSuccess = true;
 		}
@@ -420,16 +420,20 @@ public class PostProcessingService {
 			if (files.size() > 0) {
 				ZipUtility zipUtility = new ZipUtility();
 				zipUtility.zipProcessing(files, archiveZipFileName);
-				copyFileToTargetDirectory(archiveZipFileName, "",targetDirectory);
+				copyFileToTargetDirectory(archiveZipFileName, "", targetDirectory);
 				deleteFiles(files);
 				new File(archiveZipFileName).delete();
-			}else {
+			} else {
 				message = "no file for archive";
 			}
 		} catch (Exception exception) {
 			logger.info("exception:" + exception.getMessage());
 		}
 		return message;
+	}
+	
+	public String getFileName(String blobName) {
+		return blobName.replace(OUTPUT_DIRECTORY, "");
 	}
 }
 
