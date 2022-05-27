@@ -34,4 +34,7 @@ public class PostProcessingConstant {
     public static final String POSTPROCESSING_DIRECTORY = "postprocessing/";
     public static final String OUTPUT_DIRECTORY = "output/";
     public static final String LOG_FILE = "postprocessing_";
+
+    public static final String APPLICATION_PROPERTY_DIRECTORY = "property";
+    public static final String PROPERTY_FILE_NAME = "application.properties";
 }

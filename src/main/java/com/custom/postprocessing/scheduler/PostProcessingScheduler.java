@@ -52,6 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
@@ -110,9 +111,13 @@ public class PostProcessingScheduler {
 
 	List<String> pclFileList = new LinkedList<>();
 
+	@Autowired
+	private Environment environment;
+
 	@Scheduled(cron = "${cron.job.interval}")
 	public void postProcessing() {
-		logger.info("start postProcessing batch DevOps pipeline deployment testing:dev2");
+		logger.info(environment.getProperty("blob.container.name"));
+		logger.info("start postProcessing batch outside application deployment testing:dev");
 		String message = smartComPostProcessing();
 		logger.info(message);
 	}
@@ -222,6 +227,13 @@ public class PostProcessingScheduler {
 	private String getSheetNumber(String fileName, ListBlobItem blobItem) {
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			//ET - added to mitigate vulnerability - Improper Restriction of XML External Entity Reference CWE ID 611
+			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+			factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+			factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			factory.setXIncludeAware(false);
+			factory.setExpandEntityReferences(false);
 			DocumentBuilder builder = factory.newDocumentBuilder();
 			File file = new File(fileName);
 			CloudBlob cloudBlob = (CloudBlob) blobItem;
