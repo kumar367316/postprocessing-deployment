@@ -3,6 +3,8 @@ package com.custom.postprocessing;
 import static com.custom.postprocessing.constant.PostProcessingConstant.APPLICATION_PROPERTY_DIRECTORY;
 import static com.custom.postprocessing.constant.PostProcessingConstant.PROPERTY_FILE_NAME;
 import static com.custom.postprocessing.constant.PostProcessingConstant.ROOT_DIRECTORY;
+import static com.custom.postprocessing.constant.PostProcessingConstant.ACCOUNT_KEY_VALUE;
+import static com.custom.postprocessing.constant.PostProcessingConstant.CONTANIER_NAME;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -63,10 +65,9 @@ public class PostProcessingApplication extends SpringBootServletInitializer {
 	public static CloudBlobContainer containerInfo() {
 		CloudBlobContainer container = null;
 		try {
-			CloudStorageAccount account = CloudStorageAccount.parse(
-					"DefaultEndpointsProtocol=https;AccountName=pmapostprcoessing1;AccountKey=m2cIK0WnmiBa0HO1GBZMKl9NRomWr3tzWyP+IHQnmjO6yrQu7j8s4EWbyqH/x1tfyCffshjLCqyyWWw7cEYdlw==");
+			CloudStorageAccount account = CloudStorageAccount.parse(ACCOUNT_KEY_VALUE);
 			CloudBlobClient serviceClient = account.createCloudBlobClient();
-			container = serviceClient.getContainerReference("sc-output");
+			container = serviceClient.getContainerReference(CONTANIER_NAME);
 		} catch (Exception exception) {
 			exception.getMessage();
 		}

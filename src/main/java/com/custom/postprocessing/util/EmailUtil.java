@@ -44,7 +44,7 @@ public class EmailUtil {
 	@Autowired
 	private Configuration config;
 
-	@Value("${mail.form}")
+	@Value("${mail.from}")
 	private String mailForm;
 
 	@Value("${mail.to}")

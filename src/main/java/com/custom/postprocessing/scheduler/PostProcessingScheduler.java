@@ -114,7 +114,7 @@ public class PostProcessingScheduler {
 	@Autowired
 	private Environment environment;
 
-	@Scheduled(cron = "${cron.job.interval}")
+	@Scheduled(cron = "${cron.job.print.interval}")
 	public void postProcessing() {
 		logger.info(environment.getProperty("blob.container.name"));
 		logger.info("start postProcessing batch outside application deployment testing:dev");
@@ -151,7 +151,7 @@ public class PostProcessingScheduler {
 		return messageInfo;
 	}
 
-	public void archivePostProcessing() {
+	public String archivePostProcessing() {
 		String message = "post processing archive completed successfully";
 		try {
 			String currentDate = currentDateTime();
@@ -163,6 +163,7 @@ public class PostProcessingScheduler {
 			logger.info("error in archive file:" + exception.getMessage());
 		}
 		logger.info(message);
+		return message;
 	}
 
 	private boolean moveFileToTargetDirectory(String sourceDirectory, String targetDirectory) {

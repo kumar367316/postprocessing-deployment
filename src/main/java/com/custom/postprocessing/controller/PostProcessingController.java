@@ -18,11 +18,11 @@ public class PostProcessingController {
 
     @GetMapping(path = "/postprocessors")
     public String manualPostProcessBatch() {
-        return postProcessingService.smartComPostProcessing();
+        return postProcessingService.manualSmartComPostProcessing();
     }
     
     @GetMapping(path = "/manualarchive")
     public String manualManualArchive() {
-        return postProcessingService.archivePostProcessing();
+        return postProcessingService.manualArchivePostProcessing();
     }
 }
