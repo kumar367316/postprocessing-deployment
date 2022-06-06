@@ -15,7 +15,7 @@ import static com.custom.postprocessing.constant.PostProcessingConstant.PCL_EXTE
 import static com.custom.postprocessing.constant.PostProcessingConstant.PDF_EXTENSION;
 import static com.custom.postprocessing.constant.PostProcessingConstant.POSTPROCESSING_DIRECTORY;
 import static com.custom.postprocessing.constant.PostProcessingConstant.PRINT_DIRECTORY;
-import static com.custom.postprocessing.constant.PostProcessingConstant.PROCESSED_DIRECTORY;
+import static com.custom.postprocessing.constant.PostProcessingConstant.PROCESS_DIRECTORY;
 import static com.custom.postprocessing.constant.PostProcessingConstant.ROOT_DIRECTORY;
 import static com.custom.postprocessing.constant.PostProcessingConstant.SPACE_VALUE;
 import static com.custom.postprocessing.constant.PostProcessingConstant.TRANSIT_DIRECTORY;
@@ -128,18 +128,18 @@ public class PostProcessingScheduler {
 	}
 
 	public String smartComPostProcessing() {
-		String messageInfo = "smart comm post processing successfully";
-		String currentDate = currentDateTime();
+		String messageInfo = "smartcomm post processing successfully";
+		String currentDate = currentDate();
 		try {
 			CloudBlobContainer container = containerInfo();
 			CloudBlobDirectory transitDirectory = getDirectoryName(container,
-					POSTPROCESSING_DIRECTORY + TRANSIT_DIRECTORY, currentDate + "-" + PRINT_DIRECTORY);
-			String transitTargetDirectory = POSTPROCESSING_DIRECTORY + TRANSIT_DIRECTORY + "/" + currentDate + "-";
+					OUTPUT_DIRECTORY + TRANSIT_DIRECTORY, currentDate + "-" + PROCESS_DIRECTORY+"/");
+			String transitTargetDirectory = OUTPUT_DIRECTORY + TRANSIT_DIRECTORY + "/" + currentDate + "-" + PROCESS_DIRECTORY+"/";
 			if (moveFileToTargetDirectory(OUTPUT_DIRECTORY + PRINT_DIRECTORY, transitTargetDirectory)) {
 				messageInfo = processMetaDataInputFile(transitDirectory, currentDate);
 				String logFile = LOG_FILE + currentDate + ".log";
 				logger.info("logFile file:" + logFile);
-				copyFileToTargetDirectory(logFile, "postprocessing", LOG_DIRECTORY);
+				copyFileToTargetDirectory(logFile, ROOT_DIRECTORY, LOG_DIRECTORY);
 				deletePreviousLogFile();
 			} else {
 				messageInfo = "no file for post processing";
@@ -148,15 +148,15 @@ public class PostProcessingScheduler {
 			logger.info("Exception:" + exception.getMessage());
 			messageInfo = "error in copy file to blob directory";
 		}
+		logger.info(messageInfo);
 		return messageInfo;
 	}
 
 	public String archivePostProcessing() {
 		String message = "post processing archive completed successfully";
 		try {
-			String currentDate = currentDateTime();
-			String targetDirectory = POSTPROCESSING_DIRECTORY + TRANSIT_DIRECTORY + "/" + currentDate + "-"
-					+ ARCHIVE_DIRECTORY;
+			String currentDate = currentDate();
+			String targetDirectory = OUTPUT_DIRECTORY + TRANSIT_DIRECTORY + "/" + currentDate;
 			message = zipFileTransferToArchive(currentDate, OUTPUT_DIRECTORY + ARCHIVE_DIRECTORY, targetDirectory);
 		} catch (Exception exception) {
 			message = "error in post processing archive";
@@ -172,13 +172,14 @@ public class PostProcessingScheduler {
 		Iterable<BlobItem> listBlobs = blobContainerClient.listBlobsByHierarchy(sourceDirectory);
 		for (BlobItem blobItem : listBlobs) {
 			String fileName = getFileName(blobItem.getName());
+			fileName = findActualFileName(fileName);
 			BlobClient dstBlobClient = blobContainerClient.getBlobClient(targetDirectory + fileName);
 			BlobClient srcBlobClient = blobContainerClient.getBlobClient(blobItem.getName());
 			String updateSrcUrl = srcBlobClient.getBlobUrl();
 			if (srcBlobClient.getBlobUrl().contains(BACKSLASH_ASCII)) {
 				updateSrcUrl = srcBlobClient.getBlobUrl().replace(BACKSLASH_ASCII, FILE_SEPARATION);
 			}
-			dstBlobClient.copyFromUrl(updateSrcUrl);
+			dstBlobClient.beginCopy(updateSrcUrl, null);
 			srcBlobClient.delete();
 			moveSuccess = true;
 		}
@@ -187,7 +188,7 @@ public class PostProcessingScheduler {
 
 	public String processMetaDataInputFile(CloudBlobDirectory transitDirectory, String currentDate) {
 		ConcurrentHashMap<String, List<String>> postProcessMap = new ConcurrentHashMap<>();
-		String message = "smart comm post processing successfully";
+		String message = "smartcomm post processing successfully";
 		try {
 			Iterable<ListBlobItem> blobList = transitDirectory.listBlobs();
 
@@ -263,7 +264,7 @@ public class PostProcessingScheduler {
 	// post merge PDF
 	public String mergePDF(ConcurrentHashMap<String, List<String>> postProcessMap, String currentDate)
 			throws IOException {
-		String message = "smart comm post processing successfully";
+		String message = "smartcomm post processing successfully";
 		ConcurrentHashMap<String, List<String>> updatePostProcessMap = new ConcurrentHashMap<>();
 		List<String> fileNameList = new LinkedList<>();
 		CloudBlobContainer container = containerInfo();
@@ -276,7 +277,7 @@ public class PostProcessingScheduler {
 				PDFMerger.addSource(bannerFileName);
 				Collections.sort(fileNameList);
 				CloudBlobDirectory transitDirectory = getDirectoryName(container,
-						POSTPROCESSING_DIRECTORY + TRANSIT_DIRECTORY + "/", currentDate + "-" + PRINT_DIRECTORY);
+						OUTPUT_DIRECTORY + TRANSIT_DIRECTORY + "/", currentDate + "-" + PROCESS_DIRECTORY);
 				for (String fileName : fileNameList) {
 					logger.info("process file details:" + fileName);
 					File file = new File(fileName);
@@ -285,7 +286,8 @@ public class PostProcessingScheduler {
 					PDFMerger.addSource(file.getPath());
 				}
 				fileType = postProcessUtil.getFileType(fileType);
-				String mergePdfFile = fileType + "-merge" + "-" + currentDate + PDF_EXTENSION;
+				String currentDateTime = currentDateTimeStamp();
+				String mergePdfFile = fileType + "_" + currentDateTime + PDF_EXTENSION;
 				PDFMerger.setDestinationFileName(mergePdfFile);
 				PDFMerger.mergeDocuments();
 				convertPDFToPCL(mergePdfFile, container);
@@ -330,7 +332,8 @@ public class PostProcessingScheduler {
 			stream.close();
 			outStream.close();
 			fileEditor.setCloseConcatenatedStreams(true);
-			copyFileToTargetDirectory(outputPclFile, POSTPROCESSING_DIRECTORY + TRANSIT_DIRECTORY, PROCESSED_DIRECTORY);
+			String currentDate = currentDate();
+			copyFileToTargetDirectory(outputPclFile, OUTPUT_DIRECTORY + TRANSIT_DIRECTORY, currentDate);
 			pclFileList.add(outputPclFile);
 			new File(outputPclFile).delete();
 		} catch (Exception exception) {
@@ -412,11 +415,18 @@ public class PostProcessingScheduler {
 		return container;
 	}
 
-	public String currentDateTime() {
+	public String currentDate() {
 		Date date = new Date();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		return dateFormat.format(date);
 	}
+
+	public String currentDateTimeStamp() {
+		Date date = new Date();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
+		return dateFormat.format(date);
+	}
+
 
 	public CloudBlobDirectory getDirectoryName(CloudBlobContainer container, String directoryName,
 			String subDirectoryName) throws URISyntaxException {
@@ -453,7 +463,8 @@ public class PostProcessingScheduler {
 			CloudBlobDirectory transitDirectory = getDirectoryName(container, rootDirectoryName, "");
 			Iterable<BlobItem> listBlobs = blobContainerClient.listBlobsByHierarchy(rootDirectoryName);
 			List<String> files = new LinkedList<String>();
-			String archiveZipFileName = currentDate + "-" + ARCHIVE_VALUE;
+			String currentDateTime = currentDateTimeStamp();
+			String archiveZipFileName = currentDateTime + "-" + ARCHIVE_VALUE+".zip";
 			for (BlobItem blobItem : listBlobs) {
 				String fileNames[] = StringUtils.split(blobItem.getName(), "/");
 				String fileName = fileNames[fileNames.length - 1];
@@ -480,5 +491,13 @@ public class PostProcessingScheduler {
 	
 	public String getFileName(String blobName) {
 		return blobName.replace(OUTPUT_DIRECTORY, "");
+	}
+
+	public String findActualFileName(String fileName) {
+		if(StringUtils.isNoneEmpty(fileName)) {
+			String fileNames[] = fileName.split("/");
+			fileName = fileNames[fileNames.length - 1];
+		}
+		return fileName;
 	}
 }

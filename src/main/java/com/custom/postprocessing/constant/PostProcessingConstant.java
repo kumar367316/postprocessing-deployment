@@ -14,7 +14,7 @@ public class PostProcessingConstant {
 	public static final String ARCHIVE_SUB_DIRECTORY = "-archive/";
 	public static final String BANNER_DIRECTORY = "banner/";
 	public static final String BANNER_PAGE = "Banner_";
-	public static final String PROCESSED_DIRECTORY = "processed";
+	public static final String PROCESS_DIRECTORY = "process";
 	public static final String LOG_DIRECTORY = "log";
 	public static final String SPACE_VALUE = "%20";
 	public static final String EMPTY_SPACE = " ";

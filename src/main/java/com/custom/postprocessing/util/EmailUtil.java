@@ -73,7 +73,7 @@ public class EmailUtil {
 			response.setStatus(Boolean.TRUE);
 			documentTxtFile.delete();
 		} catch (Exception exception) {
-			logger.info("exception:");
+			logger.info("exception:"+exception.getMessage());
 		}
 
 		return response;
